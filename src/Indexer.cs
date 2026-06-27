@@ -25,12 +25,12 @@ public sealed class Indexer
         int yeni = 0, guncel = 0, atlanan = 0, silinen = 0;
         var diskte = new HashSet<string>();
 
-        foreach (var file in Directory.GetFiles(_knowledgeDir, "*.md"))
+        foreach (var file in Directory.EnumerateFiles(_knowledgeDir).Where(DocumentReader.Supports))
         {
             string source = Path.GetFileName(file);
             diskte.Add(source);
 
-            string text = await File.ReadAllTextAsync(file);
+            string text = await DocumentReader.ReadAsync(file); // .md/.txt/.pdf/.docx
             string hash = Hashing.Sha256(text);
 
             // İçerik hash'i aynıysa dosya değişmemiştir -> yeniden embed etme (boşa para yok).

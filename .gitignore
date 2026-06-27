@@ -12,3 +12,8 @@ obj/
 .env
 *.env
 appsettings.*.local.json
+
+# knowledge/ içindeki kişisel/binary dökümanlar (CV, PDF, Word) repoya gitmesin.
+# RAG yine de bunları LOKALDE okur; gitignore yalnızca git'i etkiler.
+knowledge/*.pdf
+knowledge/*.docx
