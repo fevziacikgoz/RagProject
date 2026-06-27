@@ -49,9 +49,10 @@ while (true)
     string? question = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(question)) break;
 
-    AnswerResult result = await pipeline.AskAsync(question);
+    Console.Write("\n>> Cevap: ");
+    AnswerResult result = await pipeline.AskStreamingAsync(question, Console.Write);
+    Console.WriteLine();
 
-    Console.WriteLine($"\n>> Cevap: {result.Answer}");
     Console.WriteLine(result.FromCache
         ? $"   (kaynak: ÖNBELLEK — LLM'e gidilmedi, mesafe={result.Distance:F3}, eşik={threshold.Value:F3})"
         : $"   (kaynak: LLM + {result.Sources.Count} parça)");
