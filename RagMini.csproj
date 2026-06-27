@@ -23,6 +23,8 @@
   <ItemGroup>
     <!-- Bilgi tabanı klasörü; çıktıya kopyalansın (artımlı indexleme buradan okur) -->
     <None Update="knowledge/**/*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Eval soru seti -->
+    <None Update="eval/**/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

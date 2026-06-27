@@ -5,38 +5,50 @@ using OpenAI;
 using RagMini;
 
 // =====================================================================
-//  RAG Web — ASP.NET Core Minimal API + SSE streaming + statik chat UI
-//  Çekirdek (src/) aynı; burada sadece HTTP katmanı var.
+//  RAG — Web (ASP.NET Core) veya Eval modu
+//  Web:   dotnet run            → http://localhost:5000
+//  Eval:  dotnet run -- --eval  → soru setini çalıştır, skor + metrik bas
+//  Metrikler her istekte query_log tablosuna kalıcı yazılır.
 // =====================================================================
 
 Console.OutputEncoding = Encoding.UTF8;
-var builder = WebApplication.CreateBuilder(args);
 
 EnvLoader.Load();
 string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
     ?? throw new Exception("OPENAI_API_KEY tanımlı değil. .env dosyasına OPENAI_API_KEY=sk-... ekle.");
 
-// ── Servisleri kur (sağlayıcı tek noktada) ───────────────────────────
+// ── Servisleri kur (hem eval hem web için ortak) ─────────────────────
 var openAi    = new OpenAIClient(apiKey);
 var embedder  = new EmbeddingService(openAi.GetEmbeddingClient(RagOptions.EmbeddingModel).AsIEmbeddingGenerator());
 var chat      = new ChatService(openAi.GetChatClient(RagOptions.ChatModel).AsIChatClient());
-
 var database  = await Database.CreateAsync(RagOptions.ConnectionString);
 var docStore  = new DocumentStore(database.DataSource);
 var cache     = new CacheStore(database.DataSource);
 var retriever = new HybridRetriever(docStore);
 var threshold = new AdaptiveThreshold();
-var pipeline  = new RagPipeline(embedder, chat, retriever, cache, threshold);
+var metrics   = new MetricsStore(database.DataSource);
+var pipeline  = new RagPipeline(embedder, chat, retriever, cache, threshold, metrics);
 
+string knowledgeDir = Path.Combine(AppContext.BaseDirectory, RagOptions.KnowledgeDir);
+
+// ── EVAL MODU ────────────────────────────────────────────────────────
+if (args.Contains("--eval"))
+{
+    await new Indexer(docStore, cache, embedder, knowledgeDir).RunAsync();
+    string evalPath = Path.Combine(AppContext.BaseDirectory, "eval", "eval-set.json");
+    await new EvalHarness(pipeline, metrics, evalPath).RunAsync();
+    return;
+}
+
+// ── WEB MODU ─────────────────────────────────────────────────────────
+var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 app.UseDefaultFiles();   // / → wwwroot/index.html
 app.UseStaticFiles();
 
-// ── İndexlemeyi ARKA PLANDA başlat: sunucu hemen dinler, UI spinner gösterir ──
-string knowledgeDir = Path.Combine(AppContext.BaseDirectory, RagOptions.KnowledgeDir);
+// İndexlemeyi arka planda başlat: sunucu hemen dinler, UI spinner gösterir.
 var indexing = Task.Run(() => new Indexer(docStore, cache, embedder, knowledgeDir).RunAsync());
 
-// ── Hazır mı? (UI spinner bunu yoklar) ───────────────────────────────
 app.MapGet("/api/status", () => Results.Json(new
 {
     ready  = indexing.IsCompletedSuccessfully,
@@ -44,7 +56,8 @@ app.MapGet("/api/status", () => Results.Json(new
     error  = indexing.IsFaulted ? indexing.Exception?.GetBaseException().Message : null
 }));
 
-// ── SSE streaming: cevabı token token akıtır ─────────────────────────
+app.MapGet("/api/metrics", async () => Results.Json(await metrics.SnapshotAsync()));
+
 app.MapGet("/api/ask/stream", async (HttpContext ctx, string? q) =>
 {
     if (!indexing.IsCompletedSuccessfully) { ctx.Response.StatusCode = 503; return; }

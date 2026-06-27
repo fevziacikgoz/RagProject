@@ -9,11 +9,12 @@ public sealed class ChatService
     private readonly IChatClient _client;
     public ChatService(IChatClient client) => _client = client;
 
-    /// <summary>Cevabı tek seferde döndürür.</summary>
-    public async Task<string> AnswerAsync(string systemPrompt, string userPrompt)
+    /// <summary>Cevabı tek seferde döndürür; token kullanımı da gelir (metrikler için).</summary>
+    public async Task<(string Text, long InputTokens, long OutputTokens)> AnswerAsync(string systemPrompt, string userPrompt)
     {
         ChatResponse response = await _client.GetResponseAsync(Build(systemPrompt, userPrompt));
-        return response.Text;
+        var usage = response.Usage;
+        return (response.Text, usage?.InputTokenCount ?? 0, usage?.OutputTokenCount ?? 0);
     }
 
     /// <summary>Cevabı parça parça (streaming) akıtır.</summary>

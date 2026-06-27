@@ -1,0 +1,22 @@
+[
+  { "question": "Senior yazılım mühendisi maaşı nedir?", "expectedKeywords": ["90.000", "140.000"], "shouldRefuse": false },
+  { "question": "Yıllık iznim kaç gün?", "expectedKeywords": ["14"], "shouldRefuse": false },
+  { "question": "5 yıldır çalışıyorum, kaç gün iznim var?", "expectedKeywords": ["20"], "shouldRefuse": false },
+  { "question": "Yemek kartına ne kadar yükleniyor?", "expectedKeywords": ["3.000"], "shouldRefuse": false },
+  { "question": "Cuma günü mesai kaçta biter?", "expectedKeywords": ["16:00"], "shouldRefuse": false },
+  { "question": "Doğum izni kaç hafta?", "expectedKeywords": ["16"], "shouldRefuse": false },
+  { "question": "Babalık izni kaç gün?", "expectedKeywords": ["10"], "shouldRefuse": false },
+  { "question": "Toplam çalışan sayısı kaç?", "expectedKeywords": ["248"], "shouldRefuse": false },
+  { "question": "Hastalık raporu kaç saat içinde bildirilir?", "expectedKeywords": ["24"], "shouldRefuse": false },
+  { "question": "Yıllık eğitim bütçesi ne kadar?", "expectedKeywords": ["15.000"], "shouldRefuse": false },
+  { "question": "Performans değerlendirmesi hangi aylarda yapılır?", "expectedKeywords": ["Haziran", "Aralık"], "shouldRefuse": false },
+  { "question": "Backend ekibi hangi dilleri kullanır?", "expectedKeywords": ["Go"], "shouldRefuse": false },
+  { "question": "DevOps ekibi hangi araçları kullanır?", "expectedKeywords": ["Kubernetes"], "shouldRefuse": false },
+  { "question": "Uzaktan çalışma haftada kaç gün?", "expectedKeywords": ["2"], "shouldRefuse": false },
+  { "question": "Ulaşım desteği aylık ne kadar?", "expectedKeywords": ["1.500"], "shouldRefuse": false },
+  { "question": "Şirketin CEO'su kim?", "expectedKeywords": null, "shouldRefuse": true },
+  { "question": "Ofiste kreş var mı?", "expectedKeywords": null, "shouldRefuse": true },
+  { "question": "Servis güzergahı nedir?", "expectedKeywords": null, "shouldRefuse": true },
+  { "question": "Şirketin spor takımı var mı?", "expectedKeywords": null, "shouldRefuse": true },
+  { "question": "Çalışanların evcil hayvan getirmesine izin var mı?", "expectedKeywords": null, "shouldRefuse": true }
+]

@@ -40,6 +40,18 @@ public sealed class Database
                 created_at TIMESTAMPTZ DEFAULT now()
             );
 
+            -- Her soru-isteğinin kalıcı metrik kaydı
+            CREATE TABLE IF NOT EXISTS query_log (
+                id            SERIAL PRIMARY KEY,
+                question      TEXT,
+                from_cache    BOOLEAN,
+                latency_ms    INT,
+                input_tokens  INT,
+                output_tokens INT,
+                sources       TEXT,
+                created_at    TIMESTAMPTZ DEFAULT now()
+            );
+
             -- HNSW index: çok kayıtta cosine (<=>) aramasını hızlandırır
             CREATE INDEX IF NOT EXISTS docs_embedding_hnsw
                 ON docs USING hnsw (embedding vector_cosine_ops);

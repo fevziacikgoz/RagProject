@@ -1,8 +1,9 @@
-# 🧠 Minimal RAG — .NET + pgvector + OpenAI
+# 🧠 Sıfırdan Üretim Seviyesine RAG
+### .NET + pgvector + OpenAI
 
-> Bir akşamda uçtan uca çalıştırıp RAG'i **gerçekten** anlamak için yazılmış,
-> sade ama "gösterilebilir" bir öğrenme projesi. Konsol değil; **tarayıcıda
-> streaming chat arayüzü** ile her adımı çalışırken gör.
+> Bir akşamda **minimal** başladı; **semantic cache, hybrid arama, streaming web UI,
+> sağlayıcı bağımsızlığı, eval ve kalıcı metriklerle** üretim seviyesine büyüdü.
+> Teoriyi okumak yerine — her adımı tarayıcıda çalışırken gör.
 
 ```
 Akış:  WATCH(klasör) → CHUNK → EMBED → STORE
@@ -54,6 +55,8 @@ kurguyu istediğin alana taşıyabilirsin.
 | 🌊 **Streaming** | Cevap kelime kelime akar (SSE) |
 | 📄 **PDF / Word / md** | `.pdf`, `.docx`, `.md`, `.txt` dökümanlarını okur ve indexler |
 | 💬 **Web chat arayüzü** | ASP.NET Core + tarayıcıda chat; açılışta "hazırlanıyor" spinner'ı |
+| 🧪 **Eval harness** | 20 soruluk set ile doğruluk + uydurma ölçümü (`dotnet run -- --eval`) |
+| 📈 **Observability** | Önbellek isabet oranı, ortalama gecikme, token sayacı |
 
 ---
 
@@ -149,6 +152,7 @@ web (ASP.NET Core) katmanı + servis kurulumu:
 Program.cs                    → ASP.NET Core Minimal API + SSE streaming
 wwwroot/index.html            → tarayıcı chat arayüzü (spinner'lı)
 knowledge/                    → bilgi tabanı (.md / .txt / .pdf / .docx)
+eval/eval-set.json            → değerlendirme soru seti (20 soru)
 src/
  ├─ RagOptions.cs             → tüm ayarlar/sabitler tek yerde
  ├─ EnvLoader.cs · Hashing.cs · Models.cs
@@ -162,7 +166,9 @@ src/
  ├─ Indexer.cs                → artımlı indexleme
  ├─ HybridRetriever.cs        → re-rank + relevans filtresi
  ├─ AdaptiveThreshold.cs      → kendini ayarlayan eşik
- └─ RagPipeline.cs            → akışı orkestra eder (streaming + non-streaming)
+ ├─ RagPipeline.cs            → akışı orkestra eder (streaming + non-streaming)
+ ├─ EvalHarness.cs            → eval setini çalıştırır, skor basar
+ └─ Metrics.cs                → önbellek/gecikme/token sayaçları
 ```
 
 | Kavram | Dosya |
@@ -178,6 +184,8 @@ src/
 | Streaming (SSE) | `ChatService` · `RagPipeline` · `Program.cs` |
 | PDF / Word okuma | `DocumentReader` |
 | Web chat arayüzü | `Program.cs` · `wwwroot/index.html` |
+| Eval harness | `EvalHarness` + `eval/eval-set.json` |
+| Metrikler (observability) | `Metrics` |
 
 ---
 
@@ -217,6 +225,8 @@ dotnet run
 
 **Bir dökümanı düzenle** → uygulamayı yeniden başlat: sadece o dosya yeniden vektörlenir, önbellek otomatik temizlenir.
 
+**Kaliteyi ölç:** `dotnet run -- --eval` → 20 soruluk set çalışır; **skor** (`✓/✗`) + **metrik özeti** (önbellek isabeti, gecikme, token) basar.
+
 ---
 
 ## ✅ Yetenekler
@@ -226,6 +236,7 @@ dotnet run
 - [x] HNSW + trigram index (ölçek)
 - [x] `Microsoft.Extensions.AI` (`IChatClient` + `IEmbeddingGenerator`) — sağlayıcı bağımsızlığı
 - [x] Streaming yanıt · PDF/Word/md ingestion · Web chat arayüzü (spinner'lı)
+- [x] Eval harness (doğruluk/uydurma ölçümü) · Observability (cache hit, gecikme, token)
 
 ---
 
