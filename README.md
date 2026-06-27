@@ -216,20 +216,12 @@ dotnet run
 
 ---
 
-## 📈 Yol haritası
+## ✅ Yetenekler
 
-**Tamamlandı** ✅
 - [x] Klasik RAG · Semantic cache · Artımlı indexleme · Adaptif eşik · Otomatik cache temizleme
 - [x] Citations · Akıllı chunking · Relevans filtresi · Hybrid search · Re-ranking
-- [x] **HNSW + trigram index** (ölçek)
-- [x] **`Microsoft.Extensions.AI` / `IChatClient`** (sağlayıcı bağımsızlığı)
-
-**Sırada**
-- [ ] Streaming yanıt
-- [ ] PDF/Word ingestion
-- [ ] Web API + minimal UI
-- [ ] Eval harness (doğruluk/uydurma ölçümü)
-- [ ] Observability (token, cache hit, gecikme)
+- [x] HNSW + trigram index (ölçek)
+- [x] `Microsoft.Extensions.AI` / `IChatClient` (sağlayıcı bağımsızlığı)
 
 ---
 
