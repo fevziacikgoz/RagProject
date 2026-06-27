@@ -1,0 +1,14 @@
+# .NET build çıktıları
+bin/
+obj/
+*.user
+
+# IDE
+.vs/
+.idea/
+.vscode/
+
+# Ortam / sırlar — API anahtarı ASLA repoya girmesin
+.env
+*.env
+appsettings.*.local.json
