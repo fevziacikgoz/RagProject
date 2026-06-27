@@ -38,14 +38,14 @@ public sealed class RagPipeline
         return await PersistAsync(question, qVector, answer, chunks);
     }
 
-    /// <summary>Streaming cevap: her token üretildikçe onToken çağrılır.</summary>
-    public async Task<AnswerResult> AskStreamingAsync(string question, Action<string> onToken)
+    /// <summary>Streaming cevap: her token üretildikçe onToken (async) çağrılır.</summary>
+    public async Task<AnswerResult> AskStreamingAsync(string question, Func<string, Task> onToken)
     {
         float[] qVector = await _embedder.EmbedAsync(question);
 
         if (await TryCacheAsync(qVector) is { } cached)
         {
-            onToken(cached.Answer); // önbellek isabeti: hazır cevabı anında yaz
+            await onToken(cached.Answer); // önbellek isabeti: hazır cevabı anında gönder
             return cached;
         }
 
@@ -54,7 +54,7 @@ public sealed class RagPipeline
         await foreach (var token in _chat.AnswerStreamingAsync(SystemPrompt, BuildPrompt(question, chunks)))
         {
             sb.Append(token);
-            onToken(token);
+            await onToken(token);
         }
         return await PersistAsync(question, qVector, sb.ToString(), chunks);
     }

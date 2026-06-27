@@ -1,12 +1,12 @@
 # 🧠 Minimal RAG — .NET + pgvector + OpenAI
 
 > Bir akşamda uçtan uca çalıştırıp RAG'i **gerçekten** anlamak için yazılmış,
-> sade ama "gösterilebilir" bir öğrenme projesi. Teoriyi okumak yerine; chunk'la,
-> embed et, sakla, **hybrid ara**, üret — ve her adımı çalışırken gör.
+> sade ama "gösterilebilir" bir öğrenme projesi. Konsol değil; **tarayıcıda
+> streaming chat arayüzü** ile her adımı çalışırken gör.
 
 ```
 Akış:  WATCH(klasör) → CHUNK → EMBED → STORE
-       → ( SEMANTIC CACHE? ) → HYBRID RETRIEVE → RE-RANK → GENERATE
+       → ( SEMANTIC CACHE? ) → HYBRID RETRIEVE → RE-RANK → GENERATE → STREAM
 ```
 
 ---
@@ -51,6 +51,9 @@ kurguyu istediğin alana taşıyabilirsin.
 | 🧹 **Otomatik cache temizleme** | Bir döküman değişince önbellek temizlenir → bayat cevap yok |
 | 🔌 **Sağlayıcı bağımsızlığı** | LLM erişimi `Microsoft.Extensions.AI` (`IChatClient` + `IEmbeddingGenerator`) arkasında — OpenAI/Azure/Ollama tek satırda değişir |
 | 🚀 **HNSW + trigram index** | Vektör ve kelime aramaları binlerce kayıtta da hızlı kalır |
+| 🌊 **Streaming** | Cevap kelime kelime akar (SSE) |
+| 📄 **PDF / Word / md** | `.pdf`, `.docx`, `.md`, `.txt` dökümanlarını okur ve indexler |
+| 💬 **Web chat arayüzü** | ASP.NET Core + tarayıcıda chat; açılışta "hazırlanıyor" spinner'ı |
 
 ---
 
@@ -139,25 +142,27 @@ flowchart TD
 
 ## 🗂️ Proje yapısı
 
-İş mantığı `Program.cs`'ten çıkarılıp katmanlı bir yapıya bölündü (`Program.cs`
-artık sadece *composition root* + REPL):
+İş mantığı `src/` altında katmanlı sınıflara bölündü; `Program.cs` yalnızca
+web (ASP.NET Core) katmanı + servis kurulumu:
 
 ```
-Program.cs                    → servisleri kur + soru-cevap döngüsü
-knowledge/                    → bilgi tabanı (her .md bir konu)
+Program.cs                    → ASP.NET Core Minimal API + SSE streaming
+wwwroot/index.html            → tarayıcı chat arayüzü (spinner'lı)
+knowledge/                    → bilgi tabanı (.md / .txt / .pdf / .docx)
 src/
  ├─ RagOptions.cs             → tüm ayarlar/sabitler tek yerde
  ├─ EnvLoader.cs · Hashing.cs · Models.cs
  ├─ EmbeddingService.cs       → embedding (MEAI IEmbeddingGenerator)
- ├─ ChatService.cs            → chat (MEAI IChatClient)
+ ├─ ChatService.cs            → chat + streaming (MEAI IChatClient)
  ├─ Database.cs               → NpgsqlDataSource + şema (vector, pg_trgm, HNSW index)
  ├─ DocumentStore.cs          → docs: indexleme + hybrid aday getirme
  ├─ CacheStore.cs             → qa_cache: lookup / save / clear
+ ├─ DocumentReader.cs         → .md/.txt/.pdf/.docx metin çıkarma
  ├─ Chunker.cs                → akıllı chunking (overlap'li)
  ├─ Indexer.cs                → artımlı indexleme
  ├─ HybridRetriever.cs        → re-rank + relevans filtresi
  ├─ AdaptiveThreshold.cs      → kendini ayarlayan eşik
- └─ RagPipeline.cs            → tüm akışı orkestra eder
+ └─ RagPipeline.cs            → akışı orkestra eder (streaming + non-streaming)
 ```
 
 | Kavram | Dosya |
@@ -170,6 +175,9 @@ src/
 | Chunking | `Chunker` |
 | Sağlayıcı bağımsızlığı (MEAI) | `EmbeddingService` · `ChatService` · `Program.cs` |
 | HNSW / trigram index | `Database` |
+| Streaming (SSE) | `ChatService` · `RagPipeline` · `Program.cs` |
+| PDF / Word okuma | `DocumentReader` |
+| Web chat arayüzü | `Program.cs` · `wwwroot/index.html` |
 
 ---
 
@@ -189,32 +197,25 @@ docker run -d --name ragdb -p 5432:5432 -e POSTGRES_PASSWORD=postgres pgvector/p
 # 2) API anahtarı (.env dosyası — repoya gitmez)
 echo 'OPENAI_API_KEY=sk-...' > .env
 
-# 3) Çalıştır
+# 3) Çalıştır → tarayıcıda aç: http://localhost:5000
 dotnet run
 ```
 
 > `pg_trgm` ve `vector` extension'ları uygulama tarafından otomatik kurulur.
+> Açılışta dökümanlar **arka planda** indexlenir; arayüz "hazırlanıyor" spinner'ı gösterir, biter bitmez chat açılır.
 
 ---
 
 ## 🧪 Dene
 
-```
-? senior maaşı nedir?
->> Cevap: Senior yazılım mühendisi aylık brüt 90.000-140.000 TL.
-   (kaynak: LLM + 3 parça)
-   📎 Kaynaklar: 02-maaslar.md
+`dotnet run` → **http://localhost:5000** → chat ekranında sor:
 
-? senior olarak ne kadar alırım?          ← benzer soru, biraz sonra
->> Cevap: ... 90.000-140.000 TL ...
-   (kaynak: ÖNBELLEK — LLM'e gidilmedi, mesafe=0.174, eşik=0.190)
-   📎 Kaynaklar: 02-maaslar.md
+- `Senior maaşı nedir?` → cevap **kelime kelime akar**, altında `📎 02-maaslar.md`
+- Aynı soruyu tekrar sor → `⚡ önbellek` etiketi (LLM'e gidilmez)
+- `Şirketin CEO'su kim?` → bağlam dışı → **"Bu bilgiye sahip değilim"** (uydurmaz)
+- Bir `.pdf` / `.docx` ekleyip ilgili soruyu sor → o dosyadan yanıt + kaynak
 
-? Şirketin CEO'su kim?                      ← bağlam dışı
->> Cevap: Bu bilgiye sahip değilim.
-```
-
-**Bir dosyayı düzenle** → tekrar çalıştır: sadece o dosya yenilenir, önbellek temizlenir.
+**Bir dökümanı düzenle** → uygulamayı yeniden başlat: sadece o dosya yeniden vektörlenir, önbellek otomatik temizlenir.
 
 ---
 
@@ -224,6 +225,7 @@ dotnet run
 - [x] Citations · Akıllı chunking · Relevans filtresi · Hybrid search · Re-ranking
 - [x] HNSW + trigram index (ölçek)
 - [x] `Microsoft.Extensions.AI` (`IChatClient` + `IEmbeddingGenerator`) — sağlayıcı bağımsızlığı
+- [x] Streaming yanıt · PDF/Word/md ingestion · Web chat arayüzü (spinner'lı)
 
 ---
 
@@ -238,7 +240,7 @@ dotnet run
 ---
 
 ## 🛠️ Teknolojiler
-.NET 10 · PostgreSQL + pgvector + pg_trgm (HNSW) · Microsoft.Extensions.AI · OpenAI (`text-embedding-3-small`, `gpt-4o-mini`) · Npgsql · Docker
+.NET 10 · ASP.NET Core (Minimal API + SSE) · PostgreSQL + pgvector + pg_trgm (HNSW) · Microsoft.Extensions.AI · OpenAI (`text-embedding-3-small`, `gpt-4o-mini`) · Npgsql · PdfPig · OpenXML · Docker
 
 > Bu bir öğrenme projesidir; üretim için değil, **anlamak** için yazıldı. Fork'la,
 > kendi verini koy, yeni özellikler ekle. 🚀
