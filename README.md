@@ -49,7 +49,7 @@ kurguyu istediğin alana taşıyabilirsin.
 | ♻️ **Artımlı indexleme** | `knowledge/`'da yalnızca **değişen** dosyaları yeniden vektörle (içerik hash'i) |
 | 🎯 **Adaptif eşik** | Cache eşiğini, sorulan soruların mesafe analizine göre **kendisi ayarlar** |
 | 🧹 **Otomatik cache temizleme** | Bir döküman değişince önbellek temizlenir → bayat cevap yok |
-| 🔌 **Sağlayıcı bağımsızlığı** | LLM erişimi `Microsoft.Extensions.AI` (`IChatClient`) arkasında — OpenAI/Azure/Ollama tek satırda değişir |
+| 🔌 **Sağlayıcı bağımsızlığı** | LLM erişimi `Microsoft.Extensions.AI` (`IChatClient` + `IEmbeddingGenerator`) arkasında — OpenAI/Azure/Ollama tek satırda değişir |
 | 🚀 **HNSW + trigram index** | Vektör ve kelime aramaları binlerce kayıtta da hızlı kalır |
 
 ---
@@ -168,6 +168,8 @@ src/
 | Adaptif eşik | `AdaptiveThreshold` |
 | Artımlı indexleme | `Indexer` + `Hashing` |
 | Chunking | `Chunker` |
+| Sağlayıcı bağımsızlığı (MEAI) | `EmbeddingService` · `ChatService` · `Program.cs` |
+| HNSW / trigram index | `Database` |
 
 ---
 
@@ -221,7 +223,7 @@ dotnet run
 - [x] Klasik RAG · Semantic cache · Artımlı indexleme · Adaptif eşik · Otomatik cache temizleme
 - [x] Citations · Akıllı chunking · Relevans filtresi · Hybrid search · Re-ranking
 - [x] HNSW + trigram index (ölçek)
-- [x] `Microsoft.Extensions.AI` / `IChatClient` (sağlayıcı bağımsızlığı)
+- [x] `Microsoft.Extensions.AI` (`IChatClient` + `IEmbeddingGenerator`) — sağlayıcı bağımsızlığı
 
 ---
 
