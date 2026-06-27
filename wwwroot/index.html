@@ -16,18 +16,21 @@
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     }
     header {
-      padding:16px 20px; border-bottom:1px solid var(--border);
-      font-weight:600; font-size:18px;
+      padding:16px 20px; border-bottom:1px solid var(--border); font-weight:600; font-size:18px;
     }
     header span { color:var(--teal); }
     header small { display:block; font-weight:400; font-size:12px; color:var(--muted); margin-top:2px; }
 
+    /* Yerleşim: sol sohbet + sağ metrik paneli */
+    .layout { flex:1; display:flex; min-height:0; }
+    .main   { flex:1; display:flex; flex-direction:column; min-width:0; }
+
     #chat {
       flex:1; overflow-y:auto; padding:24px;
-      display:flex; flex-direction:column; gap:14px; max-width:900px; width:100%; margin:0 auto;
+      display:flex; flex-direction:column; gap:14px;
     }
     .msg {
-      max-width:78%; padding:12px 16px; border-radius:14px;
+      max-width:80%; padding:12px 16px; border-radius:14px;
       line-height:1.55; white-space:pre-wrap; word-wrap:break-word;
     }
     .user { align-self:flex-end; background:var(--user); color:#fff; border-bottom-right-radius:4px; }
@@ -36,7 +39,6 @@
 
     form {
       display:flex; gap:10px; padding:16px 20px; border-top:1px solid var(--border);
-      max-width:900px; width:100%; margin:0 auto;
     }
     input {
       flex:1; padding:13px 16px; border-radius:10px; border:1px solid #30363d;
@@ -50,22 +52,49 @@
     }
     button:disabled { opacity:.5; cursor:default; }
 
-    /* Hazırlanıyor ekranı */
+    /* Metrik paneli */
+    #board {
+      width:280px; flex-shrink:0; border-left:1px solid var(--border);
+      background:#0b0e16; padding:18px; overflow-y:auto;
+    }
+    .board-head {
+      font-weight:600; font-size:15px; margin-bottom:16px; display:flex; align-items:center; gap:8px;
+    }
+    .board-spin {
+      display:none; width:14px; height:14px; border:2px solid var(--border);
+      border-top-color:var(--teal); border-radius:50%; animation:spin .8s linear infinite;
+    }
+    .board-spin.active { display:inline-block; }
+    .metric {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:12px 14px; margin-bottom:10px;
+      background:var(--panel); border:1px solid var(--border); border-radius:10px;
+      transition:border-color .3s;
+    }
+    .metric.flash { border-color:var(--teal); }
+    .metric label { color:var(--muted); font-size:13px; }
+    .metric b { font-size:18px; }
+    .metric b.hl { color:var(--teal); }
+
+    /* Açılış (hazırlanıyor) ekranı */
     #loading {
-      position:fixed; inset:0; z-index:10;
-      background:rgba(13,17,23,.97);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
-      text-align:center; padding:24px;
+      position:fixed; inset:0; z-index:10; background:rgba(13,17,23,.97);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:20px; text-align:center; padding:24px;
     }
     .spinner {
       width:52px; height:52px; border:4px solid var(--border);
-      border-top-color:var(--teal); border-radius:50%;
-      animation:spin .9s linear infinite;
+      border-top-color:var(--teal); border-radius:50%; animation:spin .9s linear infinite;
     }
     @keyframes spin { to { transform:rotate(360deg); } }
-    #loadingTitle { font-size:18px; font-weight:600; color:var(--txt); }
+    #loadingTitle { font-size:18px; font-weight:600; }
     #loadingText  { font-size:13px; color:var(--muted); }
     .err { color:#f85149; }
+
+    @media (max-width:760px) {
+      .layout { flex-direction:column; }
+      #board { width:auto; border-left:none; border-top:1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
@@ -73,18 +102,30 @@
     <small>.NET + pgvector + OpenAI · semantic cache · hybrid arama · kaynak gösterimli</small>
   </header>
 
-  <!-- Açılış: dökümanlar indexlenirken spinner -->
   <div id="loading">
     <div class="spinner"></div>
     <div id="loadingTitle">Asistan hazırlanıyor…</div>
     <div id="loadingText">Dökümanlar okunuyor ve vektörleniyor, bu birkaç saniye sürebilir.</div>
   </div>
 
-  <div id="chat"></div>
-  <form id="f">
-    <input id="q" placeholder="Soru sor… (örn. Pizza günü hangi gün? / Senior maaşı nedir?)" autocomplete="off" disabled>
-    <button id="send" disabled>Gönder</button>
-  </form>
+  <div class="layout">
+    <div class="main">
+      <div id="chat"></div>
+      <form id="f">
+        <input id="q" placeholder="Soru sor… (örn. Pizza günü hangi gün? / Senior maaşı nedir?)" autocomplete="off" disabled>
+        <button id="send" disabled>Gönder</button>
+      </form>
+    </div>
+
+    <aside id="board">
+      <div class="board-head">📊 Canlı Metrikler <span class="board-spin" id="boardSpin"></span></div>
+      <div class="metric"><label>Toplam soru</label><b id="m-q">0</b></div>
+      <div class="metric"><label>Önbellek isabeti</label><b id="m-hit" class="hl">%0</b></div>
+      <div class="metric"><label>LLM çağrısı</label><b id="m-llm">0</b></div>
+      <div class="metric"><label>Ort. gecikme</label><b id="m-lat">0 ms</b></div>
+      <div class="metric"><label>Token (giriş/çıkış)</label><b id="m-tok">0 / 0</b></div>
+    </aside>
+  </div>
 
   <script>
     const chat  = document.getElementById('chat');
@@ -92,8 +133,9 @@
     const input = document.getElementById('q');
     const send  = document.getElementById('send');
     const loading = document.getElementById('loading');
+    const boardSpin = document.getElementById('boardSpin');
 
-    // ── Hazır olana kadar /api/status'u yokla, spinner göster ──
+    // ── Hazır olana kadar /api/status'u yokla ──
     (async function waitReady() {
       while (true) {
         try {
@@ -101,6 +143,7 @@
           if (s.ready) {
             loading.style.display = 'none';
             input.disabled = false; send.disabled = false; input.focus();
+            refreshMetrics();           // ilk metrik çekimi
             return;
           }
           if (s.failed) {
@@ -110,10 +153,34 @@
             document.querySelector('.spinner').style.display = 'none';
             return;
           }
-        } catch (_) { /* sunucu daha ayağa kalkıyor olabilir */ }
+        } catch (_) {}
         await new Promise(r => setTimeout(r, 600));
       }
     })();
+
+    // ── Metrik panelini güncelle: kısa spinner (3-5 sn) → DB'den çek → yaz ──
+    async function refreshMetrics() {
+      boardSpin.classList.add('active');
+      await new Promise(r => setTimeout(r, 3000 + Math.random() * 2000)); // 3-5 sn
+      try {
+        const m = await (await fetch('/api/metrics')).json();
+        setMetric('m-q',   m.questions);
+        setMetric('m-hit', '%' + m.cacheHitRate);
+        setMetric('m-llm', m.llmCalls);
+        setMetric('m-lat', Math.round(m.avgLatencyMs) + ' ms');
+        setMetric('m-tok', m.inputTokens + ' / ' + m.outputTokens);
+      } catch (_) {}
+      boardSpin.classList.remove('active');
+    }
+
+    function setMetric(id, value) {
+      const el = document.getElementById(id);
+      if (el.textContent === String(value)) return;
+      el.textContent = value;
+      const card = el.closest('.metric');
+      card.classList.add('flash');
+      setTimeout(() => card.classList.remove('flash'), 600);
+    }
 
     // ── Soru gönder ──
     form.addEventListener('submit', (e) => {
@@ -145,6 +212,7 @@
           es.close();
           send.disabled = false;
           input.focus();
+          refreshMetrics();            // her istek sonrası paneli güncelle
         }
       };
       es.onerror = () => { es.close(); send.disabled = false; };
