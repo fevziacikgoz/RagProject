@@ -39,6 +39,16 @@ public sealed class Database
                 sources    TEXT,
                 created_at TIMESTAMPTZ DEFAULT now()
             );
+
+            -- HNSW index: çok kayıtta cosine (<=>) aramasını hızlandırır
+            CREATE INDEX IF NOT EXISTS docs_embedding_hnsw
+                ON docs USING hnsw (embedding vector_cosine_ops);
+            CREATE INDEX IF NOT EXISTS qa_cache_embedding_hnsw
+                ON qa_cache USING hnsw (embedding vector_cosine_ops);
+
+            -- Trigram GIN index: hybrid aramanın kelime (similarity) tarafını hızlandırır
+            CREATE INDEX IF NOT EXISTS docs_content_trgm
+                ON docs USING gin (content gin_trgm_ops);
             """);
         await cmd.ExecuteNonQueryAsync();
     }

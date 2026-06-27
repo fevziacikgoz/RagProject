@@ -8,8 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- OpenAI resmi .NET SDK'si: embedding + chat -->
-    <PackageReference Include="OpenAI" Version="2.1.0" />
+    <!-- Sağlayıcı-bağımsız LLM soyutlaması (IChatClient / IEmbeddingGenerator) -->
+    <PackageReference Include="Microsoft.Extensions.AI" Version="10.7.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.7.0" />
+    <!-- OpenAI resmi .NET SDK'si (MEAI.OpenAI ≥ 2.11.0 ister) -->
+    <PackageReference Include="OpenAI" Version="2.11.0" />
     <!-- PostgreSQL erisimi -->
     <PackageReference Include="Npgsql" Version="8.0.5" />
     <!-- pgvector: Vector tipi + Npgsql entegrasyonu (UseVector) -->

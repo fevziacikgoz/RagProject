@@ -1,10 +1,12 @@
 using System.Text;
+using Microsoft.Extensions.AI;
 using OpenAI;
 using RagMini;
 
 // =====================================================================
 //  RAG + Semantic Cache + Artımlı Indexleme + Hybrid Retrieval
-//  Bu dosya sadece "composition root" + REPL'dir; iş mantığı src/ altında.
+//  LLM erişimi Microsoft.Extensions.AI (IChatClient / IEmbeddingGenerator)
+//  soyutlaması üzerinden — sağlayıcı (OpenAI/Azure/Ollama) tek satırda değişir.
 // =====================================================================
 
 // Windows PowerShell dahil her terminalde Türkçe karakterler düzgün görünsün.
@@ -15,10 +17,17 @@ EnvLoader.Load();
 string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
     ?? throw new Exception("OPENAI_API_KEY tanımlı değil. .env dosyasına OPENAI_API_KEY=sk-... ekle.");
 
+// ── Sağlayıcıyı YALNIZCA burada seçiyoruz (gerisi IChatClient/IEmbeddingGenerator bilir) ──
+var openAi = new OpenAIClient(apiKey);
+
+IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator =
+    openAi.GetEmbeddingClient(RagOptions.EmbeddingModel).AsIEmbeddingGenerator();
+IChatClient chatClient =
+    openAi.GetChatClient(RagOptions.ChatModel).AsIChatClient();
+
 // ── Servisleri kur (manuel dependency wiring) ────────────────────────
-var openAi    = new OpenAIClient(apiKey);
-var embedder  = new EmbeddingService(openAi.GetEmbeddingClient(RagOptions.EmbeddingModel));
-var chat      = new ChatService(openAi.GetChatClient(RagOptions.ChatModel));
+var embedder  = new EmbeddingService(embeddingGenerator);
+var chat      = new ChatService(chatClient);
 
 var database  = await Database.CreateAsync(RagOptions.ConnectionString);
 var docStore  = new DocumentStore(database.DataSource);

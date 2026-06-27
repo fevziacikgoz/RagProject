@@ -1,16 +1,16 @@
-using OpenAI.Embeddings;
+using Microsoft.Extensions.AI;
 
 namespace RagMini;
 
-/// <summary>Metni vektöre çeviren ince OpenAI sarmalayıcısı.</summary>
+/// <summary>Metni vektöre çevirir — MEAI IEmbeddingGenerator üzerinden (sağlayıcı-bağımsız).</summary>
 public sealed class EmbeddingService
 {
-    private readonly EmbeddingClient _client;
-    public EmbeddingService(EmbeddingClient client) => _client = client;
+    private readonly IEmbeddingGenerator<string, Embedding<float>> _generator;
+    public EmbeddingService(IEmbeddingGenerator<string, Embedding<float>> generator) => _generator = generator;
 
     public async Task<float[]> EmbedAsync(string text)
     {
-        OpenAIEmbedding e = await _client.GenerateEmbeddingAsync(text);
-        return e.ToFloats().ToArray();
+        Embedding<float> embedding = await _generator.GenerateAsync(text);
+        return embedding.Vector.ToArray();
     }
 }
