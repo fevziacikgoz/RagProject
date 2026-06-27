@@ -49,6 +49,8 @@ kurguyu istediğin alana taşıyabilirsin.
 | ♻️ **Artımlı indexleme** | `knowledge/`'da yalnızca **değişen** dosyaları yeniden vektörle (içerik hash'i) |
 | 🎯 **Adaptif eşik** | Cache eşiğini, sorulan soruların mesafe analizine göre **kendisi ayarlar** |
 | 🧹 **Otomatik cache temizleme** | Bir döküman değişince önbellek temizlenir → bayat cevap yok |
+| 🔌 **Sağlayıcı bağımsızlığı** | LLM erişimi `Microsoft.Extensions.AI` (`IChatClient`) arkasında — OpenAI/Azure/Ollama tek satırda değişir |
+| 🚀 **HNSW + trigram index** | Vektör ve kelime aramaları binlerce kayıtta da hızlı kalır |
 
 ---
 
@@ -146,9 +148,9 @@ knowledge/                    → bilgi tabanı (her .md bir konu)
 src/
  ├─ RagOptions.cs             → tüm ayarlar/sabitler tek yerde
  ├─ EnvLoader.cs · Hashing.cs · Models.cs
- ├─ EmbeddingService.cs       → OpenAI embedding sarmalayıcı
- ├─ ChatService.cs            → OpenAI chat sarmalayıcı
- ├─ Database.cs               → NpgsqlDataSource + şema (vector, pg_trgm)
+ ├─ EmbeddingService.cs       → embedding (MEAI IEmbeddingGenerator)
+ ├─ ChatService.cs            → chat (MEAI IChatClient)
+ ├─ Database.cs               → NpgsqlDataSource + şema (vector, pg_trgm, HNSW index)
  ├─ DocumentStore.cs          → docs: indexleme + hybrid aday getirme
  ├─ CacheStore.cs             → qa_cache: lookup / save / clear
  ├─ Chunker.cs                → akıllı chunking (overlap'li)
@@ -216,19 +218,13 @@ dotnet run
 
 ## 📈 Yol haritası
 
-**Faz 1 — Retrieval kalitesi** ✅
-- [x] Citations (kaynak gösterme)
-- [x] Akıllı chunking (overlap'li)
-- [x] Relevans filtresi
-- [x] Hybrid search (vektör + kelime)
-- [x] Re-ranking
-
-**Önceki temel** ✅
+**Tamamlandı** ✅
 - [x] Klasik RAG · Semantic cache · Artımlı indexleme · Adaptif eşik · Otomatik cache temizleme
+- [x] Citations · Akıllı chunking · Relevans filtresi · Hybrid search · Re-ranking
+- [x] **HNSW + trigram index** (ölçek)
+- [x] **`Microsoft.Extensions.AI` / `IChatClient`** (sağlayıcı bağımsızlığı)
 
 **Sırada**
-- [ ] HNSW index (ölçek)
-- [ ] `Microsoft.Extensions.AI` / `IChatClient`'a geçiş (sağlayıcı bağımsızlığı)
 - [ ] Streaming yanıt
 - [ ] PDF/Word ingestion
 - [ ] Web API + minimal UI
@@ -248,7 +244,7 @@ dotnet run
 ---
 
 ## 🛠️ Teknolojiler
-.NET 10 · PostgreSQL + pgvector + pg_trgm · OpenAI (`text-embedding-3-small`, `gpt-4o-mini`) · Npgsql · Docker
+.NET 10 · PostgreSQL + pgvector + pg_trgm (HNSW) · Microsoft.Extensions.AI · OpenAI (`text-embedding-3-small`, `gpt-4o-mini`) · Npgsql · Docker
 
 > Bu bir öğrenme projesidir; üretim için değil, **anlamak** için yazıldı. Fork'la,
 > kendi verini koy, yeni özellikler ekle. 🚀
